@@ -1,5 +1,6 @@
 package agility.io.springbatchexample.configurations;
 
+import agility.io.springbatchexample.Repositories.PersonRepository;
 import agility.io.springbatchexample.configurations.listeners.JobCompletionNotificationListener;
 import agility.io.springbatchexample.domains.Person;
 import agility.io.springbatchexample.tasks.ScheduledTasks;
@@ -10,15 +11,20 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.*;
+import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Sort.Direction;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableBatchProcessing
@@ -30,13 +36,19 @@ public class BatchConfiguration {
 
     private final StepBuilderFactory stepBuilderFactory;
 
-    public BatchConfiguration(JobBuilderFactory jobBuilderFactory, StepBuilderFactory stepBuilderFactory) {
+    private final PersonRepository personRepository;
+
+    public BatchConfiguration(JobBuilderFactory jobBuilderFactory, StepBuilderFactory stepBuilderFactory, PersonRepository personRepository) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
+        this.personRepository = personRepository;
     }
 
+    /**
+     * Reading data from CSV file
+     */
     @Bean
-    public FlatFileItemReader<Person> reader() {
+    public FlatFileItemReader<Person> csvReader() {
 
         logger.info("Reading.........");
 
@@ -63,6 +75,28 @@ public class BatchConfiguration {
 
         return reader;
     }
+
+    /**
+     * Reading data from DB
+     */
+    @Bean
+    public ItemReader<Person> dbReader() {
+
+        logger.info("Reading from DB.........");
+
+        RepositoryItemReader<Person> reader = new RepositoryItemReader<>();
+
+        reader.setRepository(personRepository);
+        reader.setMethodName("findAll");
+
+        Map<String, Direction> sort = new HashMap<>();
+        sort.put("id", Direction.ASC);
+
+        reader.setSort(sort);
+
+        return reader;
+    }
+
 
     @Bean
     public ItemProcessor<Person, String> process() {
@@ -92,10 +126,10 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Job createFirstJobForPerson(JobCompletionNotificationListener jobCompletionNotificationListener, Step step1) {
-        return jobBuilderFactory.get("createFirstJobForPerson")
+    @Qualifier(value = "csvJob")
+    public Job createCsvJobForPerson(JobCompletionNotificationListener jobCompletionNotificationListener, @Qualifier(value = "csvStep") Step step1) {
+        return jobBuilderFactory.get("createCsvJobForPerson")
                 .incrementer(new RunIdIncrementer())
-                .preventRestart()
                 .listener(jobCompletionNotificationListener)
                 .flow(step1)
                 .end()
@@ -103,10 +137,36 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Step createFirstStepForFirstJobPerson(StepExecutionListener stepExecutionListener, ItemReadListener<Person> itemReadListener, ItemWriteListener<String> itemWriteListener) {
-        return stepBuilderFactory.get("createFirstStepForFirstJobPerson")
+    @Qualifier(value = "dbJob")
+    public Job createDbJobForPerson(JobCompletionNotificationListener jobCompletionNotificationListener, @Qualifier(value = "dbStep") Step step1) {
+        return jobBuilderFactory.get("createDbJobForPerson")
+                .incrementer(new RunIdIncrementer())
+                .listener(jobCompletionNotificationListener)
+                .flow(step1)
+                .end()
+                .build();
+    }
+
+    @Bean
+    @Qualifier(value = "csvStep")
+    public Step createCsvStepForJobPerson(StepExecutionListener stepExecutionListener, ItemReadListener<Person> itemReadListener, ItemWriteListener<String> itemWriteListener) {
+        return stepBuilderFactory.get("createCsvStepForJobPerson")
                 .<Person, String> chunk(10)
-                .reader(reader())
+                .reader(csvReader())
+                .listener(itemReadListener)
+                .processor(process())
+                .writer(write())
+                .listener(itemWriteListener)
+                .listener(stepExecutionListener)
+                .build();
+    }
+
+    @Bean
+    @Qualifier(value = "dbStep")
+    public Step createDbStepForJobPerson(StepExecutionListener stepExecutionListener, ItemReadListener<Person> itemReadListener, ItemWriteListener<String> itemWriteListener) {
+        return stepBuilderFactory.get("createDbStepForJobPerson")
+                .<Person, String> chunk(10)
+                .reader(dbReader())
                 .listener(itemReadListener)
                 .processor(process())
                 .writer(write())

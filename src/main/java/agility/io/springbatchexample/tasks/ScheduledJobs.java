@@ -6,6 +6,7 @@ import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -18,22 +19,30 @@ public class ScheduledJobs {
 
     private final JobLauncher jobLauncher;
 
-    private final Job job;
+    @Qualifier(value = "csvJob")
+    private final Job csvJob;
 
-    public ScheduledJobs(JobLauncher jobLauncher, Job job) {
+    @Qualifier(value = "dbJob")
+    private final Job dbJob;
+
+    public ScheduledJobs(JobLauncher jobLauncher, @Qualifier(value = "csvJob") Job csvJob, @Qualifier(value = "dbJob") Job dbJob) {
         this.jobLauncher = jobLauncher;
-        this.job = job;
+        this.csvJob = csvJob;
+        this.dbJob = dbJob;
     }
 
-    public void runJob() {
+    public void runJob(String jobParameter) {
 
         try {
             Map<String, JobParameter> jobParameterMap = new HashMap<>();
-            jobParameterMap.put("person", new JobParameter("person"));
+            jobParameterMap.put("person", new JobParameter(jobParameter));
             JobParameters jobParameters = new JobParameters(jobParameterMap);
 
+            if (jobParameter.equals("csv"))
+                jobLauncher.run(csvJob, jobParameters);
 
-            jobLauncher.run(job, jobParameters);
+            if (jobParameter.equals("db"))
+                jobLauncher.run(dbJob, jobParameters);
         } catch (Exception e) {
             logger.error(e.getMessage());
         }
