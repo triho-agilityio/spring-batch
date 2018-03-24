@@ -19,7 +19,7 @@ public class ScheduledTasks {
     /**
      * You can schedule a method to be executed at a fixed interval by using fixedRate parameter in the @Scheduled annotation.
      */
-    @Scheduled(fixedRate = 2000) // milisecond
+    @Scheduled(fixedRate = 300000) // milisecond
     public void scheduleTaskWithFixedRate() {
 
         logger.info("Fixed Rate Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
@@ -31,7 +31,7 @@ public class ScheduledTasks {
      * between the completion of the last invocation and the start of the next, using fixedDelay parameter.
      * The fixedDelay parameter counts the delay after the completion of the last invocation.
      */
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelay = 300000)
     public void scheduleTaskWithFixedDelay() {
 
         logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
@@ -50,7 +50,7 @@ public class ScheduledTasks {
      * In the following example, the first execution of the task will be delayed by 5 seconds
      * and then it will be executed normally at a fixed interval of 2 seconds
      */
-    @Scheduled(fixedRate = 2000, initialDelay = 5000)
+    @Scheduled(fixedRate = 300000, initialDelay = 600000)
     public void scheduleTaskWithInitialDelay() {
         logger.info("Fixed Rate Task with Initial Delay :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
     }
@@ -59,7 +59,7 @@ public class ScheduledTasks {
     /**
      * Scheduling a Task using Cron Expression
      */
-    @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 0 4 * * *")
     public void scheduleTaskWithCronExpression() {
         logger.info("Cron Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
     }
