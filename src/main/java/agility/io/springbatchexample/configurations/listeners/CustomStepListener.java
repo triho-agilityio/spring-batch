@@ -8,21 +8,26 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Component
 public class CustomStepListener implements StepExecutionListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
 
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     @Override
     public void beforeStep(StepExecution stepExecution) {
 
-        logger.info("StepExecutionListener - beforeStep");
+        logger.info("StepExecutionListener - beforeStep - {}", dateTimeFormatter.format(LocalDateTime.now()));
     }
 
     @Override
     public ExitStatus afterStep(StepExecution stepExecution) {
 
-        logger.info("StepExecutionListener - afterStep");
+        logger.info("StepExecutionListener - afterStep - {}", dateTimeFormatter.format(LocalDateTime.now()));
 
         return null;
     }

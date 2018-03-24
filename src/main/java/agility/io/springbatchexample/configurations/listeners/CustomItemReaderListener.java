@@ -7,19 +7,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ItemReadListener;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Component
 public class CustomItemReaderListener implements ItemReadListener<Person> {
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
 
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     @Override
     public void beforeRead() {
-        logger.info("ItemReadListener - beforeRead");
+        logger.info("ItemReadListener - beforeRead - {}", dateTimeFormatter.format(LocalDateTime.now()));
     }
 
     @Override
     public void afterRead(Person person) {
-        logger.info("ItemReadListener - afterRead");
+        logger.info("ItemReadListener - afterRead - {}", dateTimeFormatter.format(LocalDateTime.now()));
     }
 
     @Override
