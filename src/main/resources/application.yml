@@ -1,0 +1,11 @@
+spring:
+  batch:
+    job:
+      enabled: false
+  # Database Configuration
+  datasource:
+    url: jdbc:h2:mem:personDB;DB_CLOSE_ON_EXIT=FALSE # JDBC url of the database.
+    username: root # Login user of the database.
+    password: 123 # Login password of the database.
+    driver-class-name: org.h2.Driver
+    initialize: false # Populate the database using 'data.sql'.
